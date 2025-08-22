@@ -22,28 +22,75 @@ export default async function handler(req, res) {
     const { lat, lng } = geoData.results[0].geometry.location;
 
     // 3) get all the nearby cafes that are open
-    console.log(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`);
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+// https://maps.googleapis.com/maps/api/place/details/json?place_id=PLACE_ID&fields=name,opening_hours&key=YOUR_API_KEY
 
-    const response = await fetch(url);
-    const data = await response.json();
 
-    if (data.status !== "OK") {
-      console.error("Google API error:", data);
-      return res.status(500).json({ error: "Google Places API error", details: data });
+    // console.log(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`);
+    // const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+
+
+    // const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+
+    // const response = await fetch(url);
+    // const data = await response.json();
+
+    // if (data.status !== "OK") {
+    //   console.error("Google API error:", data);
+    //   return res.status(500).json({ error: "Google Places API error", details: data });
+    // }
+        // 2) Nearby Search for open cafes
+    const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+    const nearbyRes = await fetch(nearbyUrl);
+    const nearbyData = await nearbyRes.json();
+
+    if (nearbyData.status !== "OK") {
+      return res.status(500).json({ error: "Google Places API error", details: nearbyData });
     }
 
-    // 4) Return useful fields
-    const results = data.results.map((place) => ({
-      place_id: place.place_id,
-      name: place.name,
-      vicinity: place.vicinity,
-      rating: place.rating,
-      user_ratings_total: place.user_ratings_total,
-      location: place.geometry?.location,
-    }));
+    // 4) return the places that are open, plus their closing times
+        // 3) For each cafe, fetch details to get closing time
+    const cafesWithClosingTimes = await Promise.all(
+      nearbyData.results.map(async (place) => {
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,opening_hours,formatted_address,rating,user_ratings_total&key=${apiKey}`;
+        const detailsRes = await fetch(detailsUrl);
+        const detailsData = await detailsRes.json();
 
-    res.status(200).json({ results });
+        let closingTime = null;
+        if (detailsData.result.opening_hours?.periods) {
+          const today = new Date().getDay(); // 0=Sun, 1=Mon...
+          const todayPeriod = detailsData.result.opening_hours.periods.find(
+            (p) => p.open.day === today
+          );
+          if (todayPeriod?.close) {
+            closingTime = `${todayPeriod.close.time.slice(0, 2)}:${todayPeriod.close.time.slice(2)}`;
+          }
+        }
+
+        return {
+          place_id: place.place_id,
+          name: place.name,
+          vicinity: place.vicinity,
+          rating: place.rating,
+          user_ratings_total: place.user_ratings_total,
+          location: place.geometry?.location,
+          closing_time: closingTime,
+        };
+      })
+    );
+
+    res.status(200).json({ results: cafesWithClosingTimes });
+
+    // // 4) Return useful fields
+    // const results = data.results.map((place) => ({
+    //   place_id: place.place_id,
+    //   name: place.name,
+    //   vicinity: place.vicinity,
+    //   rating: place.rating,
+    //   user_ratings_total: place.user_ratings_total,
+    //   location: place.geometry?.location,
+    // }));
+
+    // res.status(200).json({ results });
   } catch (err) {
     console.error("Error in API function:", err);
     res.status(500).json({ error: "Internal Server Error" });
