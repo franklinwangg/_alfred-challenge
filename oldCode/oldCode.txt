@@ -1,0 +1,105 @@
+Dashboard
+
+// pages/Dashboard.jsx
+import React, { useState } from "react";
+import TabNavigation from "../components/TabNavigation";
+
+import Tab from "../components/Tab";
+
+const Dashboard = () => {
+  const [tabs, setTabs] = useState([]);
+  const [newTabTitle, setNewTabTitle] = useState("");
+
+  const handleAddTab = () => {
+    if (!newTabTitle.trim()) return;
+    const newTab = { title: newTabTitle };
+    setTabs([...tabs, newTab]);
+    setNewTabTitle("");
+  };
+
+  return (
+    <div>
+      <TabNavigation tabs={tabs}></TabNavigation>
+
+      <div>
+        <input
+          placeholder="New Tab"
+          value={newTabTitle}
+          onChange={(e) => setNewTabTitle(e.target.value)}
+        />
+        <button onClick={handleAddTab}>Add New Tab</button>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+
+
+TabNavigation
+
+
+import React, { useState } from "react";
+import Tab from "./Tab";
+
+export default function TabNavigation({ tabs }) {
+  const [activeTab, setActiveTab] = useState(null);
+
+  const handleClickTab = (tab) => {
+    setActiveTab(tab);
+  };
+
+  const addTab = () => {
+    const newIndex = tabs.length;
+    setTabs([...tabs, <Tab key={newIndex} title={`Tab ${newIndex + 1}`} />]);
+    setActiveIndex(newIndex);
+  };
+
+  return (
+    <div>
+      {activeTab && <Tab title={activeTab.title} />}
+
+      {tabs.map((tab, index) => (
+        <button key={index} onClick={() => handleClickTab(tab)}>
+          {tab.title}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
+
+Tab
+import React from "react";
+import { useState } from "react";
+
+export default function Tab({ title }) {
+  const [tasks, setTasks] = useState([]);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+
+  const handleAddTask = () => {
+    setTasks([...tasks, newTaskTitle]);
+  };
+
+  return (
+    <div>
+      <div>{title}</div>
+
+      <div>
+        {tasks.map((task) => {
+          return <ul>{task}</ul>;
+        })}
+      </div>
+
+      <div>
+        <input
+          placeholder="New Task"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+        />
+        <button onClick={handleAddTask}>Add New Task</button>
+      </div>
+    </div>
+  );
+}

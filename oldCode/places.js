@@ -4,44 +4,51 @@ export default async function handler(req, res) {
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     const { location, radius = 2000 } = req.query;
     if (!location) {
-      return res.status(400).json({ error: "Missing location parameter" });
+        
+        return res.status(400).json({ error: "Missing location parameter" });
     }
+
 
     // 2) convert the location into coordinates
     const geoRes = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        location
-      )}&key=${apiKey}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${apiKey}`
     );
     const geoData = await geoRes.json();
 
     if (geoData.status !== "OK") {
-      return res
-        .status(500)
-        .json({ error: "Geocoding failed", details: geoData });
+      return res.status(500).json({ error: "Geocoding failed", details: geoData });
     }
 
     const { lat, lng } = geoData.results[0].geometry.location;
 
-    // 2) Nearby Search for open cafes
+    // 3) get all the nearby cafes that are open
+// https://maps.googleapis.com/maps/api/place/details/json?place_id=PLACE_ID&fields=name,opening_hours&key=YOUR_API_KEY
+
+
+    // console.log(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`);
+    // const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+
+
+    // const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
+
+    // const response = await fetch(url);
+    // const data = await response.json();
+
+    // if (data.status !== "OK") {
+    //   console.error("Google API error:", data);
+    //   return res.status(500).json({ error: "Google Places API error", details: data });
+    // }
+        // 2) Nearby Search for open cafes
     const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=cafe&opennow=true&key=${apiKey}`;
-    // const nearbyRes = await fetch(nearbyUrl);
-    // const nearbyData = await nearbyRes.json();
     const nearbyRes = await fetch(nearbyUrl);
     const nearbyData = await nearbyRes.json();
 
-    if (!nearbyData.results || nearbyData.results.length === 0) {
-      return res.status(200).json({ results: [] });
-    }
-
-    if (nearbyData.status != "OK") {
-      return res
-        .status(500)
-        .json({ error: "Google Places API error", details: nearbyData });
+    if (nearbyData.status !== "OK") {
+      return res.status(500).json({ error: "Google Places API error", details: nearbyData });
     }
 
     // 4) return the places that are open, plus their closing times
-    // 3) For each cafe, fetch details to get closing time
+        // 3) For each cafe, fetch details to get closing time
     const cafesWithClosingTimes = await Promise.all(
       nearbyData.results.map(async (place) => {
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,opening_hours,formatted_address,rating,user_ratings_total&key=${apiKey}`;
@@ -50,15 +57,12 @@ export default async function handler(req, res) {
 
         let closingTime = null;
         if (detailsData.result.opening_hours?.periods) {
-          const today = new Date().getDay();
+          const today = new Date().getDay(); // 0=Sun, 1=Mon...
           const todayPeriod = detailsData.result.opening_hours.periods.find(
             (p) => p.open.day === today
           );
           if (todayPeriod?.close) {
-            closingTime = `${todayPeriod.close.time.slice(
-              0,
-              2
-            )}:${todayPeriod.close.time.slice(2)}`;
+            closingTime = `${todayPeriod.close.time.slice(0, 2)}:${todayPeriod.close.time.slice(2)}`;
           }
         }
 
