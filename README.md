@@ -1,6 +1,20 @@
-so im thinking about making a study location service. you input your location, and then we scrape google maps with their api for all cafes nearby, and return all the ones in the region that are still open at the time
+# 📚 Study Spot Finder
 
+## Overview
 
-Your Task (≤ 6 hours): Identify a real student pain point (e.g. assignment deadlines across portals, class schedules, dining hall menus, gym hours, office hours, etc.). Pitch your widget idea in a few sentences within the README (what problem it solves, what info it shows, how it makes a student’s day easier). Build a prototype (React or plain JS is fine). Focus on clarity and approach over polish. Deploy to Vercel and share the live link (also share link to GitHub repo.)
+**Study Spot Finder** is a tool that allows students to instantly find a list of nearby cafes that are currently open and suitable for studying.
 
-What We’re Looking For: Taste, Production Intuition, Code Quality, and a clear understanding of your user
+## Setup
+The Google Places API key will be required to run the backend functionality - send me a message if you need it. After obtaining the API key, create a .env file and set the variable <GOOGLE_PLACES_API_KEY> equal to the stringified API key. 
+
+## Features
+
+* 🔍 Instantly search for open cafes in your area
+* ⭐ View store reviews and ratings
+* 💲 See pricing information
+* ⏰ Check store closing times
+* 📍 Get location details
+
+## Purpose
+
+Students often waste time checking multiple cafes to see which ones are open or suitable for studying. Study Spot Finder solves this problem by providing a quick and reliable way to discover open cafes nearby, complete with all the important details to make an informed choice.
