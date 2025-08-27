@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   try {
     // 1) get the location from the request
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
     const { location, radius = 2000 } = req.query;
     if (!location) {
       return res.status(400).json({ error: "Missing location parameter" });
